@@ -1,0 +1,37 @@
+int MyDigitalRead(int MyPort, int MyPin){
+	
+	int x = MyPin % 32; // this will give us the value if the shift register that we want to update
+	temp = unit32_t;
+	bool ReadVal = 0;
+	
+	if(MyPort == 0){
+		// REG_PORT_DIRCLR0 |= (1U << x); // set the direction clear bit and the pin will be a input. we dont have to set it necessarly to read the pin value.
+		//uncomment the above line to set the direction of the pin as input.
+		REG_PORT_PINCFG0 |= (1U << INEN); //enable read privlages in the register as it might have been disabled by any peripheral
+		temp = REG_PORT_IN0; //read the REG_PORT_IN0
+		ReadVal = (temp >> x) & 0x00000001; // get the value that was stored in the copied varible
+		if (ReadVal == 1){
+			return 1;
+		}
+		else return 0;
+	}
+	
+	else	
+	if(MyPort == 1){
+		// REG_PORT_DIRCLR1 |= (1U << x); // set the direction clear bit and the pin will be a input. we dont have to set it necessarly to read the pin value.
+		//uncomment the above line to set the direction of the pin as input.
+		REG_PORT_PINCFG1 |= (1U << INEN); //enable read privlages in the register as it might have been disabled by any peripheral
+		temp = REG_PORT_IN1; //read the REG_PORT_IN1 
+		ReadVal = (temp >> x) & 0x00000001;
+		return ReadVal;
+		if (ReadVal == 1){
+			return 1;
+		}
+		else return 0;
+	}
+	
+	else if (MyPort != 0 || MyPort != 1){
+		while(3){}// run an infinite loop to be identified in the debugger
+	}
+}
+

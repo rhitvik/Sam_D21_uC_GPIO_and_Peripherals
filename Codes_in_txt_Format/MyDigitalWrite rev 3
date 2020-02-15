@@ -1,0 +1,57 @@
+//READ ME for MyDigitalWrite
+// since all the variables are int and not bool we have assumed the following 
+// if MyValue is 0 we will clear te pin 
+// if MyValue is 1 we will set the pin
+// if MyValue is 2 we will toggle the pin
+// if MyValue is anything else, then we clear the bits as a default setting
+
+// if MyPort is 0, we operate on port0
+// if MyPort is 1, we operate on port1
+// we hold the program in an infinite loop for the debugger to detect in case there is any other value put. 
+// thats because we have only 2 ports
+
+MyDigitalWrite (int MyPort, int MyPin, int MyValue){
+	
+	int x = MyPin % 32; // this will give us the value if the shift register that we want to update
+	
+	if(MyPort == 0){
+		REG_PORT_DIR0 |= (1U << x); // set the pin at the given port to 1 to configure it as output
+		
+		if(MyValue == 0){ // set the outset0 register (it sets the bit value)
+			REG_PORT_OUTCLR0 |= (1U << x);
+		}
+		else if(MyValue == 1){ // set the outclear register (it clears the bit value)
+			REG_PORT_OUTSET0 |= (1U << x);
+		}
+		else if(MyValue == 2){ // set the outtgl register (it toggles the bit value)
+			REG_PORT_OUTTGL0 |= (1U << x);
+		}
+		else{
+			REG_PORT_OUTCLR0 |= (1U << x); // just clear the bit for all the remining values as a default
+			// we can also make an infinite while loop for our ASM debugger 
+			//while(1){}	// remove comment for this setting
+		}
+	
+	else	
+	if(MyPort == 1){
+		REG_PORT_DIR1 |= (1U << x); // set the pin at the given port to 1 to configure it as output
+		
+		if(MyValue == 0){ // set the outset0 register
+			REG_PORT_OUTCLR1 |= (1U << x);
+		}
+		else if(MyValue == 1){ // set the outclear register (it clears the bit value)
+			REG_PORT_OUTSET1 |= (1U << x);
+		}
+		else if(MyValue == 2){ // set the outtgl register (it toggles the bit value)
+			REG_PORT_OUTTGL1 |= (1U << x);
+		}
+		else{
+			REG_PORT_OUTCLR1 |= (1U << x); // just clear the bit for all the remining values as a default
+			// we can also make an infinite while loop for our ASM debugger 
+			//while(1){}	// remove comment for this setting
+		}
+	
+	else if (MyPort != 0 || MyPort != 1){
+		while(2){}// run an infinite loop to be identified in the debugger
+	}
+}

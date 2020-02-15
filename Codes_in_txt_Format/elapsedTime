@@ -1,0 +1,103 @@
+// Problem Statement : to calculate the time elapsed after a push button is pressed taking mechanical bouncing into consideration //
+
+// Our Base assumption is that the machanical bounce time is always less than the button depress time
+// NVIC Priority: pinRising_Handler >= pinFalling_Handler > Timer0_OV_Handler
+// some functions used under the assumption that the these is can be controlled by the user
+// enable_golbal_interrupts() ... enable interrupts globally
+// stop_timer() ... stops the timer
+// enable_timer() ... starts the timer with the parameters stated in the question
+// initialize_parameterResetPin_as_input(port,pin) ... sets the given gpio as input pin
+// pull-up button pin(port,pin) ... sets the pullup configuratio for the pin 
+// pull-up parameterResetPin(port,pin) ... used as a pin for resetting all the values 
+// parameterResetPin clears when ressed like our button and needs to be pulled up.
+// delay generates dalay in milliseconds
+
+# Define F_CPU 16000000UL
+
+# include "UC_specific_Macro_header_file.h"
+# include <stdBool.h>
+
+void Timer0_OV_Handler(void);
+void pinRising_Handler(void);
+void pinFalling_Handler(void);
+float Calculate_Elapsed_time_in_ms(void);
+	
+volatile float Calculate_Elapsed_time_in_ms(unsigned int overflow_count);
+
+volatile unsigned int Current_Count = 0;	// we don't want the compiler to potimize these variable
+volatile unsigned int Max_Count = 0; 		// hence the volatile
+
+volatile float timeElapsed = 0;
+bool resetParam = 1;
+
+void main(){
+	
+	initialize_buttonpin_as_input(port, buttonpin);
+	pull-up_buttonpin(port,buttonpin);
+	
+	initialize_parameterResetPin_as_input(port, parameterResetPin);
+	pull-up_parameterResetPin(port, parameterResetPin);
+	
+	bool pressed = 0;
+	// enable timer parameters with the given prescalars
+	enable global interrupts();
+	
+	while(1){ // run forever
+	// its recommeded not to press parameter reset pin before 1 second  has elapsed since the button pin was pressed 
+	// or the system will definately misbhave
+		if ((parameterResetPin == low ) && (pressed == 0)){
+			pressed = 1; // will preclude the code to enter this loop again and again
+			delay(200);  // 200 ms delay as a software dabounce
+			start_timer();			
+		}
+		else if(parameterResetPin == High){
+			delay(200); // 200 ms delay as a software dabounce
+			if (pressed == 1) {
+				pressed = 0; // will reallow the button to be pressed and code to enter the loop
+				if (Current_Count >= 1593){	// if 800 milliseconds or more has elapsed
+					stop_timer(); // stop the timer
+					Max_Count = 0; // reset the max count value so that we can test it again
+					// now we wont have to retart microcontroller to find elapsed time for the pressed button
+					// but we must make sure that we press parameterResetPin a least 1 second after we test our button for timeElapsed
+					// 200 ms from software debounce + 800 ms as a desired confidence level from the timer.
+				}					
+			}
+		}
+	}	
+}
+
+void Timer0_OV_Handler(void){
+	Current_Count++; //increment Current_Count by 1 everytime counter overflow IRQ is served
+}
+void pinRising_Handler(void){	
+	stop_timer();// function called to make the timers stop functioning
+	// we can also clear global interrupts
+	// not a good idea though as other services might be using their respective interrupts
+	
+	if(Current_Count > Max_Count){ 		// compare the current and max count 
+		Max_Count = Current_Count; 
+		timeElapsed = Calculate_Elapsed_time_in_ms(Max_Count);
+	}
+	
+	Current_Count = 0; // reset the value of the number of times the timer overflowed.
+	
+}
+void pinFalling_Handler(void){
+	if (golbal_interrupts_not_enabled){
+		enable_golbal_interrupts();
+	}
+	
+	enable_timer();// enable timer with the given parameters like prescalars e.t.c.
+}
+
+volatile float Calculate_Elapsed_time_in_ms(unsigned int overflow_count){
+	// this function convertserts the overflow frequency into elapsed time in milliseconds
+	// counter fills up the counter from index 0 to 250 ... hence counts up 251 total times
+	// lets calculate the time in milliseconds 
+	// prescalar selected = 32
+	// Clock for the counter is 16,000,000/32 = 500,000
+    // Timer Counter will overflow 500,000/251 Hz. i.e. 1992.03 Hz
+	// this means if the Max_Count == 1992 that means 1000 milliseconds has elapsed
+	pressed_time = Max_Count * (1000/1992.03);
+	return pressed_time;
+}
